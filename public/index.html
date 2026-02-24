@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bin.ary — Binary Disassembler</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="logo-bin">bin</span><span class="logo-dot">.</span><span class="logo-ary">ary</span>
+    </div>
+    <p class="tagline">binary analysis &amp; disassembly</p>
+  </header>
+
+  <!-- Upload panel -->
+  <main id="upload-panel">
+    <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload binary file">
+      <div class="drop-icon">⬆</div>
+      <div class="drop-text">Drop a binary here</div>
+      <div class="drop-sub">or click to select — PE, ELF, Mach-O, raw</div>
+      <input type="file" id="file-input" aria-hidden="true" />
+    </div>
+    <div id="upload-error" class="upload-error" hidden></div>
+  </main>
+
+  <!-- Analysis panel (hidden until upload starts) -->
+  <section id="analysis-panel" hidden>
+    <div class="pipeline-wrapper">
+      <h2 class="panel-title">Analysis Pipeline</h2>
+      <div class="pipeline" id="pipeline">
+        <!-- stages injected by JS -->
+      </div>
+    </div>
+
+    <div id="results-wrapper" hidden>
+      <!-- File info -->
+      <div class="results-grid">
+        <div class="card" id="file-info-card">
+          <h3 class="card-title">File</h3>
+          <table class="info-table" id="file-info-table"></table>
+        </div>
+        <div class="card" id="sections-card">
+          <h3 class="card-title">Sections</h3>
+          <div class="table-scroll">
+            <table class="data-table" id="sections-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Virtual Address</th>
+                  <th>Size</th>
+                  <th>Flags</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disassembly -->
+      <div class="card disasm-card">
+        <div class="disasm-header">
+          <h3 class="card-title">Disassembly</h3>
+          <span id="disasm-badge" class="badge"></span>
+          <span id="disasm-section-label" class="disasm-section"></span>
+          <input id="disasm-filter" class="disasm-filter" type="text" placeholder="filter instructions…" />
+        </div>
+        <div class="disasm-scroll" id="disasm-scroll">
+          <table class="disasm-table" id="disasm-table">
+            <thead>
+              <tr>
+                <th class="col-addr">Address</th>
+                <th class="col-bytes">Bytes</th>
+                <th class="col-mnem">Mnemonic</th>
+                <th class="col-ops">Operands</th>
+              </tr>
+            </thead>
+            <tbody id="disasm-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <button id="new-analysis-btn" class="btn-new">Analyse another file</button>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
