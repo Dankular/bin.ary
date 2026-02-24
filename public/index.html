@@ -14,71 +14,145 @@
     <p class="tagline">binary analysis &amp; disassembly</p>
   </header>
 
-  <!-- Upload panel -->
+  <!-- Upload panel ─────────────────────────────────────────────────────────-->
   <main id="upload-panel">
     <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload binary file">
       <div class="drop-icon">⬆</div>
       <div class="drop-text">Drop a binary here</div>
-      <div class="drop-sub">or click to select — PE, ELF, Mach-O, raw</div>
+      <div class="drop-sub">or click to select — PE · ELF · Mach-O · raw</div>
       <input type="file" id="file-input" aria-hidden="true" />
     </div>
     <div id="upload-error" class="upload-error" hidden></div>
   </main>
 
-  <!-- Analysis panel (hidden until upload starts) -->
+  <!-- Analysis panel ───────────────────────────────────────────────────────-->
   <section id="analysis-panel" hidden>
+
+    <!-- Pipeline -->
     <div class="pipeline-wrapper">
       <h2 class="panel-title">Analysis Pipeline</h2>
-      <div class="pipeline" id="pipeline">
-        <!-- stages injected by JS -->
-      </div>
+      <div class="pipeline" id="pipeline"></div>
     </div>
 
+    <!-- Results -->
     <div id="results-wrapper" hidden>
-      <!-- File info -->
+
+      <!-- Info + Sections -->
       <div class="results-grid">
         <div class="card" id="file-info-card">
           <h3 class="card-title">File</h3>
           <table class="info-table" id="file-info-table"></table>
         </div>
-        <div class="card" id="sections-card">
+        <div class="card">
           <h3 class="card-title">Sections</h3>
           <div class="table-scroll">
             <table class="data-table" id="sections-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Virtual Address</th>
-                  <th>Size</th>
-                  <th>Flags</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Name</th><th>Address</th><th>Size</th><th>Flags</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- Disassembly -->
-      <div class="card disasm-card">
-        <div class="disasm-header">
-          <h3 class="card-title">Disassembly</h3>
-          <span id="disasm-badge" class="badge"></span>
-          <span id="disasm-section-label" class="disasm-section"></span>
-          <input id="disasm-filter" class="disasm-filter" type="text" placeholder="filter instructions…" />
-        </div>
-        <div class="disasm-scroll" id="disasm-scroll">
-          <table class="disasm-table" id="disasm-table">
-            <thead>
-              <tr>
-                <th class="col-addr">Address</th>
-                <th class="col-bytes">Bytes</th>
-                <th class="col-mnem">Mnemonic</th>
-                <th class="col-ops">Operands</th>
-              </tr>
-            </thead>
-            <tbody id="disasm-body"></tbody>
+      <!-- Signatures -->
+      <div class="card sig-card" id="sig-card" hidden>
+        <h3 class="card-title">Detected Signatures</h3>
+        <div class="table-scroll">
+          <table class="data-table" id="sig-table">
+            <thead><tr><th>Address</th><th>Pattern</th><th>Note</th></tr></thead>
+            <tbody></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Main view tabs -->
+      <div class="card view-card">
+        <div class="view-tabs" role="tablist">
+          <button class="tab active" data-tab="disasm"     role="tab">Disassembly</button>
+          <button class="tab"        data-tab="cfg"        role="tab">Graph (CFG)</button>
+          <button class="tab"        data-tab="xrefgraph"  role="tab">Xref Graph</button>
+          <button class="tab"        data-tab="proximity"  role="tab">Proximity</button>
+        </div>
+
+        <!-- Disassembly tab -->
+        <div id="tab-disasm" class="tab-pane active">
+          <div class="disasm-header">
+            <span id="disasm-badge" class="badge"></span>
+            <span id="disasm-section-label" class="disasm-section"></span>
+            <input id="disasm-filter" class="disasm-filter" type="text" placeholder="filter  (or Ctrl+F)" />
+            <button class="btn-icon" id="btn-goto" title="Go to address (G)">⬇ Go to…</button>
+          </div>
+          <div class="disasm-scroll" id="disasm-scroll">
+            <table class="disasm-table" id="disasm-table">
+              <thead>
+                <tr>
+                  <th class="col-label"></th>
+                  <th class="col-addr">Address</th>
+                  <th class="col-bytes">Bytes</th>
+                  <th class="col-mnem">Mnemonic</th>
+                  <th class="col-ops">Operands</th>
+                  <th class="col-xref">XREFs</th>
+                </tr>
+              </thead>
+              <tbody id="disasm-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CFG tab -->
+        <div id="tab-cfg" class="tab-pane graph-pane" hidden>
+          <div id="cfg-container" class="graph-container"></div>
+        </div>
+
+        <!-- Xref Graph tab -->
+        <div id="tab-xrefgraph" class="tab-pane graph-pane" hidden>
+          <div class="graph-addr-bar">
+            <label>Address: <input id="xref-graph-addr" class="addr-input" type="text" placeholder="0x…" /></label>
+            <button class="btn-sm" id="xref-graph-btn">Show Graph</button>
+          </div>
+          <div id="xrefgraph-container" class="graph-container"></div>
+        </div>
+
+        <!-- Proximity tab -->
+        <div id="tab-proximity" class="tab-pane graph-pane" hidden>
+          <div class="graph-addr-bar">
+            <label>Address: <input id="prox-addr" class="addr-input" type="text" placeholder="0x…" /></label>
+            <button class="btn-sm" id="prox-btn">Show</button>
+          </div>
+          <div id="proximity-container" class="graph-container"></div>
+        </div>
+      </div>
+
+      <!-- XREF sidebar (shown when instruction is selected) -->
+      <div id="xref-panel" class="card xref-panel" hidden>
+        <div class="xref-header">
+          <h3 class="card-title">Cross-References</h3>
+          <span id="xref-addr-label" class="xref-addr"></span>
+          <button class="btn-icon" id="xref-close">✕</button>
+        </div>
+        <div id="xref-body" class="xref-body"></div>
+      </div>
+
+      <!-- Debugger -->
+      <div class="card debugger-card" id="debugger-card">
+        <div class="debugger-header" id="debugger-toggle">
+          <h3 class="card-title">Debugger  <span id="dbg-rip" class="dbg-rip"></span></h3>
+          <div class="dbg-controls">
+            <button class="btn-dbg" id="dbg-step"     title="Step (F7)">⬇ Step</button>
+            <button class="btn-dbg" id="dbg-run"      title="Run to breakpoint (F9)">▶ Run</button>
+            <button class="btn-dbg" id="dbg-stop"     title="Stop">⏹ Stop</button>
+            <button class="btn-dbg" id="dbg-reset"    title="Reset">↺ Reset</button>
+            <button class="btn-dbg" id="dbg-bp"       title="Toggle breakpoint at cursor (F2)">◉ BP</button>
+            <button class="btn-icon" id="debugger-collapse">▲</button>
+          </div>
+        </div>
+        <div id="debugger-body" class="debugger-body">
+          <div class="dbg-regs" id="dbg-regs"></div>
+          <div class="dbg-flags" id="dbg-flags"></div>
+          <div class="dbg-stack">
+            <div class="dbg-stack-label">Stack</div>
+            <div id="dbg-stack" class="dbg-stack-rows"></div>
+          </div>
         </div>
       </div>
 
@@ -86,6 +160,34 @@
     </div>
   </section>
 
+  <!-- Go to Address modal -->
+  <div id="modal-goto" class="modal" hidden>
+    <div class="modal-box">
+      <h4 class="modal-title">Go to Address</h4>
+      <input id="goto-input" class="modal-input" type="text" placeholder="0x401000 or 401000h" />
+      <div class="modal-actions">
+        <button class="btn-sm" id="goto-cancel">Cancel</button>
+        <button class="btn-sm btn-primary" id="goto-ok">Go</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename variable modal -->
+  <div id="modal-rename" class="modal" hidden>
+    <div class="modal-box">
+      <h4 class="modal-title">Rename Variable</h4>
+      <p class="modal-sub" id="rename-pattern"></p>
+      <input id="rename-input" class="modal-input" type="text" placeholder="new_name" />
+      <div class="modal-actions">
+        <button class="btn-sm" id="rename-cancel">Cancel</button>
+        <button class="btn-sm" id="rename-clear">Clear</button>
+        <button class="btn-sm btn-primary" id="rename-ok">Rename</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="debugger.js"></script>
+  <script src="graph.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
